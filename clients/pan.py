@@ -22,11 +22,14 @@ class Pan:
     
     def _send_keys(self, by: str, value: str, keys: str) -> None:
         # Preenche campo com texto
-        element = self.wait.until(expected_conditions.presence_of_element_located((by, value)))
+        try:
+            element = self.wait.until(expected_conditions.presence_of_element_located((by, value)))
 
-        if element.is_enabled():
-            element.click()
-            element.send_keys(keys)
+            if element.is_enabled():
+                element.click()
+                element.send_keys(keys)
+        except:
+            pass
     
     def _click(self, by: str, value: str) -> None:
         # Clica em elemento
@@ -137,14 +140,6 @@ class Pan:
             except Exception as exception:
                 print(f"[GET_FAROL_TITLE (EXCEPTION)]: {exception}")
 
-    def start(self) -> None:
-        # Executa a sequência inicial
-        self.get_link()
-        self.auth()
-        self.get_link_login()
-        self.FlMenu()
-        self.WebAutorizador()
-
     def locate(self, data: dict) -> bool:
         # Decide o que fazer dependendo da URL
         url = self.driver.current_url
@@ -155,20 +150,26 @@ class Pan:
             return True
         elif "WebAutorizador" in url:
             self.WebAutorizador()
-        elif "FIMenu" in url:
+        elif any(option in url for option in ["FIMENU", "FlMenu"]):
             self.FlMenu()
         elif "auth" in url:
             self.auth()
+            self.get_link_login()
+        else:
+            self.get_link()
         
         return False
     
     def get_link_login(self) -> None:
         # Pega o link de login e envia via Digisac
-        link_element = self.wait.until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, "a.qr-code__link[href]")))
-        link = (link_element.get_attribute("href") or "").strip()
+        try:
+            link_element = self.wait.until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, "a.qr-code__link[href]")))
+            link = (link_element.get_attribute("href") or "").strip()
 
-        if link.startswith("http"):
-            self.digisac.send_message(f"Link pro login do PAN: {link}", os.getenv("NUMBER"))
+            if link.startswith("http"):
+                self.digisac.send_message(f"Link pro login do PAN: {link}", os.getenv("NUMBER"))
+        except:
+            pass
 
     def consult(self) -> str | list:
         # Tenta consultar e simular ofertas
